@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous">
+  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.js"></script>
+  <title>Popular public API</title>
+  <style>
+    .item {
+      float: left;
+      margin: 15px 20px 15px 15px;
+    }
+    a {
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+      
+    <div class="row">
+      <div class="col col-lg-12 col-md-12 col-sm-12 col-xs-12">
+          <h2 id="text-center">Where you want to go now ?</h2>
+          <form id="location-form">
+            <input type="text" id="location-input" class="form-control form-control-lg">
+            <br>
+            <button type="submit" class="btn btn-primary btn-block">Submit</button>
+          </form>
+      </div>
+    </div>
+
+    <div class="row">
+        <div class="col col-lg-12 col-md-12 col-sm-12 col-xs-12">
+            <div class="card-block" id="formatted-address"></div>
+            <div class="card-block" id="geometry"></div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col col-lg-12 col-md-12 col-sm-12 col-xs-12">
+            <form id="fmrLocation">
+                <div class="form-group">
+                    <label for="inputLat">Latitude</label>
+                    <input type="text" class="form-control" id="inputLat" placeholder="" value="">
+                </div>
+                <div class="form-group">
+                    <label for="inputLng">Longitude</label>
+                    <input type="text" class="form-control" id="inputLng" placeholder="" value="">
+                </div>
+                <button type="submit" class="btn btn-primary">Discover</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="row">
+        <div id="listPlace" class="col col-lg-12 col-md-12 col-sm-12 col-xs-12">
+           
+        </div>
+    </div>
+
+    <div class="row">
+        <div id="listMedia"class="col col-lg-12 col-md-12 col-sm-12 col-xs-12">
+            
+        </div>
+    </div>
+
+  </div>
+
+  </div>
+
+  <script>
+
+    /* FIND LOCATION */
+    var locationForm = document.getElementById('location-form');
+
+    locationForm.addEventListener('submit', geocode);
+
+    function geocode(e){
+
+      e.preventDefault();
+
+      var location = document.getElementById('location-input').value;
+
+      axios.get('https://maps.googleapis.com/maps/api/geocode/json',{
+        params:{
+          address:location,
+          key:'AIzaSyB4RBDjoH6zDflalEfFjvOBu5eCrOVJVvA  '
+        }
+      })
+      .then(function(response){
+
+        console.log(response);
+
+        var formattedAddress = response.data.results[0].formatted_address;
+        var formattedAddressOutput = `
+          <ul class="list-group">
+            <li class="list-group-item">${formattedAddress}</li>
+          </ul>
+        `;
+
+        var lat = response.data.results[0].geometry.location.lat;
+        var lng = response.data.results[0].geometry.location.lng;
+
+          document.getElementById('inputLat').value = lat;
+          document.getElementById('inputLng').value = lng;
+
+        document.getElementById('formatted-address').innerHTML = formattedAddressOutput;
+      })
+      .catch(function(error){
+        console.log(error);
+      });
+    }
+
+    /* PROCESS SEARCHING MEDIA*/
+    $('button.SearchMedia').on('click', function(){
+      
+      console.log("Button clicked :(");
+      //axios.get({url:api, header:{'Access-Control-Allow-Origin': '*'}})
+      var lat = $(this).data('lat'),
+          long = $(this).data('long'),
+          api = `https://api.instagram.com/v1/media/search?lat=${lat}&lng=${long}&access_token=3047703293.181883d.a6e1a499d0364c0aa20941816f7ec614`;
+          console.log(api);
+          axios.get(api)
+               .then(function(response){
+                console.log(response);
+               });
+    });
+
+    /*PROCESS SEARCH FOR NEARLY LOCATION*/
+
+    $("form#fmrLocation").on('submit',(e) => {
+        e.preventDefault();
+        var lat = document.getElementById('inputLat').value,
+            lng = document.getElementById('inputLng').value,
+            api = `https://api.instagram.com/v1/locations/search?lat=${lat}&lng=${lng}&access_token=3047703293.181883d.a6e1a499d0364c0aa20941816f7ec614`;
+        console.log(api);
+    axios.get(api).then(function(response){
+
+      var ListPlace = "";
+
+        console.log(response);
+        for(var i=0;i<response.data.data.length;i++) {
+
+          var ColorIndexer = Math.floor(Math.random() * 3 + 1),
+              color;
+          //console.log(ColorIndexer);
+            switch(ColorIndexer)
+            {
+              case 1:
+              color = "btn-primary";
+              break;
+              case 2:
+              color = "btn-danger"
+              break;
+              case 3:
+              color = "btn-success";
+              break;
+            }
+
+            var latitude = response.data.data[i].latitude,
+                longitude = response.data.data[i].longitude;
+
+          ListPlace += `<button type="button" data-lat=${latitude} data-long=${longitude} class="item btn ${color} SearchMedia">${response.data.data[i].name}</button>`;
+        }
+        $("#listPlace").html(ListPlace);
+        
+        document.getElementById('listPlace').innerHTML = ListPlace;
+    }).catch(function(err){
+        console.log(err);
+    });
+});
+
+  </script>
+</body>
+</html>
